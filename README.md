@@ -25,4 +25,16 @@ Quiet LaTeX build tooling for papers and proposals.
 cd /path/to/latex/project && ./build.sh
 ```
 
+## As a Claude Code skill
+
+The repo doubles as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code/skills)
+(`SKILL.md` at the root): Claude builds `.tex` projects through `build.sh` so
+the compile output stays small, and clones / syncs Overleaf projects over git
+using an `OVERLEAF_API_KEY` token from the environment.
+
+```sh
+git clone https://github.com/aperrault/latex-build ~/.claude/skills/latex-build
+export OVERLEAF_API_KEY=...   # Overleaf → Account settings → Git integration
+```
+
 Requires `latexmk` (TeX Live / MacTeX).

@@ -4,6 +4,23 @@ Canonical source for the `build.sh` + `.latexmkrc` used across LaTeX papers and
 proposals. This file is meant to be `@`-imported into research/proposal
 contexts so agents know how to build without flooding their context.
 
+## Cloning / syncing an Overleaf project
+Overleaf's git bridge needs a token, and the interactive credential prompt fails
+from a non-interactive subprocess ("User cancelled dialog" / "Device not
+configured"). The token is in the environment as **`OVERLEAF_API_KEY`** (set in
+`~/.zshrc`); use it as the *password* with username `git`:
+
+    git clone "https://git:${OVERLEAF_API_KEY}@git.overleaf.com/<project-id>" <dir>
+
+Pipe output through `sed "s/${OVERLEAF_API_KEY}/<TOKEN>/g"` so the token does not
+land in the transcript. Same URL form works for `push`/`pull`; for an existing
+clone whose remote lacks the token, prefer
+`git -c credential.helper='!f(){ echo username=git; echo password=$OVERLEAF_API_KEY; };f' <cmd>`
+over rewriting the remote, so the token stays out of `.git/config`.
+
+A fresh Overleaf clone typically has no build tooling --- run `install.sh` on it
+(see below) before building.
+
 ## Building a project that has these files
 - Build with **`./build.sh`** (or `./build.sh <main.tex>` for a non-default
   main file). It runs latexmk quietly and prints only a short summary: exit
