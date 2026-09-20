@@ -33,17 +33,25 @@ Scripts live next to this file (`~/.claude/skills/latex-build/` when installed a
   **Every push syncs to Overleaf** and is visible to collaborators — edit freely,
   commit/push deliberately, never push build artifacts.
 - **Auth:** an Overleaf git token, expected in the environment as
-  `OVERLEAF_API_KEY`. Use it as the *password* with username `git`. Interactive
-  credential prompts fail from a non-interactive subprocess (`fatal: User
-  cancelled dialog` on macOS), so never rely on them.
+  `OVERLEAF_API_KEY`. Use it as the *password* with username `git`. A
+  `-c credential.helper=...` is *appended* to the configured helper list, so a
+  system helper (osxkeychain, Git Credential Manager) still runs first and pops
+  a login dialog (`fatal: User cancelled dialog` on macOS). Always reset the
+  list with an empty helper first, then supply the env-token helper. Clone
+  token-free, so the token never lands in the remote URL:
 
-      git clone "https://git:${OVERLEAF_API_KEY}@git.overleaf.com/<project-id>" <dir> 2>&1 | sed "s/${OVERLEAF_API_KEY}/<TOKEN>/g"
+      OVERLEAF_HELPER='!f(){ echo username=git; echo password=$OVERLEAF_API_KEY; };f'
+      git -c credential.helper= -c credential.helper="$OVERLEAF_HELPER" clone https://git.overleaf.com/<project-id> <dir>
 
-  For an existing clone whose remote lacks the token, prefer a one-off
-  credential helper over rewriting the remote, so the token stays out of
-  `.git/config`:
+  Then make it permanent for that clone (stores the helper script, which reads
+  the env var — not the token), so plain `git pull` / `git push` work:
 
-      git -c credential.helper='!f(){ echo username=git; echo password=$OVERLEAF_API_KEY; };f' pull
+      git -C <dir> config --local --replace-all credential.helper ''
+      git -C <dir> config --local --add credential.helper "$OVERLEAF_HELPER"
+
+  For a one-off on a clone without that config:
+
+      git -c credential.helper= -c credential.helper="$OVERLEAF_HELPER" pull
 
   Never echo a remote URL that embeds the token; pipe through the same `sed`.
 - A fresh clone has no build tooling — run `install.sh` on it before building.
