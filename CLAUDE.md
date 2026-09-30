@@ -8,15 +8,22 @@ contexts so agents know how to build without flooding their context.
 Overleaf's git bridge needs a token, and the interactive credential prompt fails
 from a non-interactive subprocess ("User cancelled dialog" / "Device not
 configured"). The token is in the environment as **`OVERLEAF_API_KEY`** (set in
-`~/.zshrc`); use it as the *password* with username `git`:
+`~/.zshrc`); use it as the *password* with username `git`, via a credential
+helper so the token never lands in the remote URL or `.git/config`. Reset the
+helper list with an empty helper first --- a `-c credential.helper=...` is
+otherwise *appended* after any global helpers (osxkeychain, Git Credential
+Manager), which run first and can pop a login dialog:
 
-    git clone "https://git:${OVERLEAF_API_KEY}@git.overleaf.com/<project-id>" <dir>
+    OVERLEAF_HELPER='!f(){ echo username=git; echo password=$OVERLEAF_API_KEY; };f'
+    git -c credential.helper= -c credential.helper="$OVERLEAF_HELPER" clone https://git.overleaf.com/<project-id> <dir>
 
-Pipe output through `sed "s/${OVERLEAF_API_KEY}/<TOKEN>/g"` so the token does not
-land in the transcript. Same URL form works for `push`/`pull`; for an existing
-clone whose remote lacks the token, prefer
-`git -c credential.helper='!f(){ echo username=git; echo password=$OVERLEAF_API_KEY; };f' <cmd>`
-over rewriting the remote, so the token stays out of `.git/config`.
+Then make it permanent for that clone (stores the helper script, not the token):
+
+    git -C <dir> config --local --replace-all credential.helper ''
+    git -C <dir> config --local --add credential.helper "$OVERLEAF_HELPER"
+
+Older clones may have the token embedded in the remote URL; never echo such a
+remote unredacted --- pipe through `sed "s/${OVERLEAF_API_KEY}/<TOKEN>/g"`.
 
 A fresh Overleaf clone typically has no build tooling --- run `install.sh` on it
 (see below) before building.
@@ -57,8 +64,16 @@ run `install.sh` so it picks up the quiet build + the standard `.gitignore`.**
 The canonical `.gitignore` source is `gitignore` in this repo (installed as
 `.gitignore`, mirroring how `latexmkrc` installs as `.latexmkrc`).
 
+## Overleaf clones keep the tooling local
+In an Overleaf clone (origin on `git.overleaf.com`), `install.sh` lists
+`build.sh` and `.latexmkrc` in the clone's `.git/info/exclude` (a managed block,
+never pushed), so they don't appear in collaborators' Overleaf file list. A
+fresh clone therefore needs `install.sh` again. `install.sh --commit` removes
+the block and leaves them committable. If they were already committed, it warns;
+untrack them once with `git rm --cached build.sh .latexmkrc`.
+
 ## Source of truth
 Edit the tooling here in `~/Sites/software/latex-build/`, then re-run
-`install.sh` in each project to propagate. Projects keep committed **copies**
-(not symlinks), so they stay portable to Overleaf, collaborators, and clusters
-that never see `~/Sites/software`.
+`install.sh` in each project to propagate. Projects get **copies** (not
+symlinks); outside Overleaf clones they are committed, so those projects stay
+portable to clusters that never see `~/Sites/software`.

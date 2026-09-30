@@ -13,10 +13,13 @@ Quiet LaTeX build tooling for papers and proposals.
   plus the root output `main.pdf`). Never blanket-ignores `*.pdf`, so figures
   stay tracked. Merged as a **managed block**, so project-specific ignore lines
   are preserved and re-running only refreshes our block.
-- **`install.sh [dir]`** — copy build tooling into a project and install the
-  managed `.gitignore` block (defaults to the current directory). Committed
-  *copies*, not symlinks, so a project stays portable to Overleaf, collaborators,
-  and clusters. Re-run to update.
+- **`install.sh [--commit] [dir]`** — copy build tooling into a project and
+  install the managed `.gitignore` block (defaults to the current directory).
+  Copies, not symlinks. In an **Overleaf clone** (origin on `git.overleaf.com`)
+  `build.sh` and `.latexmkrc` are kept local by listing them in the clone's
+  `.git/info/exclude`, so they never sync to collaborators; pass `--commit` to
+  leave them committable. In any other repo they are committed as usual, so the
+  project stays portable to clusters. Re-run to update.
 
 ## Use
 

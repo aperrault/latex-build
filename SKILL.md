@@ -23,9 +23,12 @@ Scripts live next to this file (`~/.claude/skills/latex-build/` when installed a
   stay tracked), and does **not** untrack artifacts already committed — clear
   those once with `git rm --cached <file>...`. If the main file is not
   `main.tex`, add its root `.pdf` to the project `.gitignore` by hand.
-- Projects keep committed *copies*, not symlinks, so they stay portable to
-  Overleaf, collaborators, and clusters. Don't copy `build.sh` between paper
-  repos; the installer is the source of truth.
+- Projects get *copies*, not symlinks. In an Overleaf clone (origin on
+  `git.overleaf.com`) `build.sh` and `.latexmkrc` are kept local via the
+  clone's `.git/info/exclude`, so they never sync to collaborators; a fresh
+  clone therefore needs `install.sh` again. `install.sh --commit` keeps them
+  committable instead. Other repos commit them. Don't copy `build.sh` between
+  paper repos; the installer is the source of truth.
 
 ## Overleaf projects
 
